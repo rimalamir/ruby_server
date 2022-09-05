@@ -1,4 +1,6 @@
 require 'socket'
+require 'erb'
+require 'ostruct'
 
 class RequestParser
   def parse(request)
@@ -51,29 +53,53 @@ class ResponseBuilder
   SERVER_ROOT = "/Users/rimalamir/Documents/Learn/Ruby/server_on_ruby/"
 
   def prepare(request)
-    if request.fetch(:path) == "/"
-      p "resuest obtained"
-      respond_with(SERVER_ROOT + "static_files/" + "index.html")
-    else
-      respond_with(SERVER_ROOT + "static_files" + request.fetch(:path))
-    end
+    # if request.fetch(:path) == "/"
+      # name = "AMIR SIR"
+      # code = "GOOD MAN"
+      # desc = "I know it"
+      # features = ["Honest", "Reliable"]
+      # cost = 5
+      # layout = File.read(SERVER_ROOT  + "index.html.erb")
+
+      my_hash = {
+        name: "John",
+        interests: ["programming", "computers", "logic"]
+      }
+
+      my_template = <<-EOF
+My name is: <%= name %>
+My interests are:
+<% interests.each do |el| %>
+- <%= el %>
+<% end %>
+      EOF
+    result_ = ERB.new(my_template).result(OpenStruct.new(my_hash).instance_eval { binding })
+    Response.new(code: 200, data: result_)
+      # p "resuest obtained"
+      # p ERB.new(layout).result(binding)
+      # respond_with(ERB.new(my_template).result(OpenStruct.new(my_hash).instance_eval { binding }))
+    # else
+    #   respond_with(SERVER_ROOT + "static_files" + request.fetch(:path))
+    # end
+
+    # Response.new(code: 200, data: )
   end
 
-  def respond_with(path)
-    if File.exists?(path)
-      send_ok_response(File.binread(path))
-    else
-      send_file_not_found
-    end
-  end
+  # def respond_with(path)
+  #   if File.exists?(path)
+  #     send_ok_response(File.binread(path))
+  #   else
+  #     send_file_not_found
+  #   end
+  # end
 
-  def send_ok_response(data)
-    Response.new(code: 200, data: data)
-  end
+  # def send_ok_response(data)
+  #   Response.new(code: 200, data: data)
+  # end
 
-  def send_file_not_found
-    Response.new(code: 404)
-  end
+  # def send_file_not_found
+  #   Response.new(code: 404)
+  # end
 end
 
 server  = TCPServer.new('localhost', 8080)
@@ -85,8 +111,10 @@ loop {
   request  = RequestParser.new.parse(request)
   response = ResponseBuilder.new.prepare(request)
 
-  puts "#{client.peeraddr[3]} #{request.fetch(:path)} - #{response.code}"
+  # puts "#{client.peeraddr[3]} #{request.fetch(:path)} - #{response.code}"
 
   response.send(client)
   client.close
 }
+
+
